@@ -1,4 +1,4 @@
-# Social Media Video Downloader - Python Backend
+# Social Media Video Downloader - Backend
 
 This is the backend server for the Social Media Video Downloader application. It is built with Python using the Flask micro-framework and leverages the powerful `yt-dlp` library to fetch metadata and stream video content from various social media platforms.
 
