@@ -1,6 +1,6 @@
 # Social Media Video Downloader - Backend
 
-This is the backend server for the Social Media Video Downloader application. It is built with Python using the Flask micro-framework and leverages the powerful `yt-dlp` library to fetch metadata and stream video content from various social media platforms.
+This is the backend server for the Social Media Video Downloader application. It has been modernized to use **FastAPI**, offering high performance, automatic API documentation, and asynchronous capabilities. It leverages the powerful `yt-dlp` library to fetch metadata and stream video content from various social media platforms.
 
 ## Features
 
@@ -8,17 +8,17 @@ This is the backend server for the Social Media Video Downloader application. It
 - **Direct Video Streaming:** Downloads and streams video content directly to the client, initiating the browser's download immediately.
 - **Wide Compatibility:** Supports all platforms that `yt-dlp` supports (YouTube, TikTok, Instagram, X/Twitter, Facebook, etc.).
 - **Quality Selection:** Allows the client to request a specific video quality or audio-only format.
+- **FastAPI Powered:** Built with modern Python features for speed and reliability.
+- **Automatic Docs:** Interactive API documentation available at `/docs`.
 
 ## Prerequisites
 
 Before you begin, ensure you have the following installed on your system:
 
 1.  **Python 3.8+**
-
     - To check your version, run: `python3 --version`
 
 2.  **pip** (Python's package installer)
-
     - Usually comes pre-installed with modern Python versions.
 
 3.  **ffmpeg**
@@ -44,7 +44,7 @@ Follow these steps to set up and run the server locally.
 
     ```bash
     git clone <your-repository-url>
-    cd <your-project-folder>/python-server
+    cd <your-project-folder>/server_py
     ```
 
 2.  **Create and Activate a Virtual Environment**
@@ -64,35 +64,46 @@ Follow these steps to set up and run the server locally.
     Your terminal prompt should now be prefixed with `(venv)`.
 
 3.  **Install Dependencies**
-    Install all the required Python packages using `pip`.
+    Install all the required Python packages using `pip` and the provided `requirements.txt`.
 
     ```bash
-    pip install Flask Flask-Cors yt-dlp
+    pip install -r requirements.txt
     ```
 
 ## Running the Server
 
-Once the setup is complete, you can start the Flask development server.
+Once the setup is complete, you can start the FastAPI server.
 
 1.  **Run the Application:**
-    Make sure you are in the `python-server` directory with your virtual environment activated.
+    Make sure you are in the `server_py` directory with your virtual environment activated.
 
     ```bash
-    python3 app.py
+    # Using python directly
+    python3 main.py
+
+    # OR using uvicorn directly (for development with auto-reload)
+    uvicorn main:app --reload --host 0.0.0.0 --port 3000
     ```
 
 2.  **Verify the Server is Running:**
     You should see output in your terminal indicating that the server is active, typically:
 
     ```
-     * Serving Flask app 'app'
-     * Debug mode: on
-     * Running on all addresses (0.0.0.0)
-     * Running on http://127.0.0.1:3000
-    Press CTRL+C to quit
+    INFO:     Uvicorn running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+    INFO:     Started reloader process [...] using StatReload
+    INFO:     Started server process [...]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
     ```
 
     The backend is now running and listening for requests on `http://localhost:3000`.
+
+## API Documentation
+
+FastAPI automatically generates interactive API documentation.
+
+- **Swagger UI:** Open [http://localhost:3000/docs](http://localhost:3000/docs) in your browser to explore and test the API endpoints interactively.
+- **ReDoc:** Open [http://localhost:3000/redoc](http://localhost:3000/redoc) for an alternative documentation view.
 
 ## API Endpoints
 
@@ -132,14 +143,19 @@ Once the setup is complete, you can start the Flask development server.
   - `quality`: The desired quality (e.g., `1080p`, `720p`, or `audio`).
 - **Example Request:**
   `http://localhost:3000/download?url=https%3A%2F%2F...&quality=720p`
-- **Success Response (200 OK):** The server streams the video or audio file directly to the client with the appropriate `Content-Disposition` and `Content-Type` headers, triggering a browser download.
+- **Success Response (200 OK):** The server streams the video or audio file directly to the client.
 
 ## Project Structure
 
-python-server/
-├── venv/ # Virtual environment directory (add to .gitignore)
-├── app.py # The main Flask application file
-└── README.md # This file
+```
+server_py/
+├── venv/               # Virtual environment directory (add to .gitignore)
+├── main.py             # The main FastAPI application file
+├── models.py           # Pydantic models for request/response schemas
+├── requirements.txt    # Project dependencies
+├── temp/               # Temporary directory for downloads
+└── README.md           # This file
+```
 
 ## Troubleshooting
 
