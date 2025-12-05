@@ -13,7 +13,18 @@ This is the backend server for the Social Media Video Downloader application. It
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed on your system:
+Before you begin, you have two options to run this application:
+
+### Option 1: Docker (Recommended for Easy Deployment)
+
+1.  **Docker**
+    - Install Docker Desktop from [docker.com](https://www.docker.com/products/docker-desktop)
+    - To verify installation: `docker --version`
+
+2.  **Docker Compose** (usually included with Docker Desktop)
+    - To verify installation: `docker-compose --version`
+
+### Option 2: Local Python Setup
 
 1.  **Python 3.8+**
     - To check your version, run: `python3 --version`
@@ -35,9 +46,69 @@ Before you begin, ensure you have the following installed on your system:
       - Download a pre-built binary from the [official FFmpeg website](https://ffmpeg.org/download.html).
       - Unzip it and add the `bin` directory to your system's PATH environment variable.
 
-## Setup and Installation
+## Quick Start with Docker (Recommended)
 
-Follow these steps to set up and run the server locally.
+The easiest way to run this application is using Docker. This method handles all dependencies (including ffmpeg) automatically.
+
+### Using Docker Compose
+
+1.  **Start the Application**
+    ```bash
+    docker-compose up -d
+    ```
+    This will build the Docker image and start the container in detached mode.
+
+2.  **View Logs**
+    ```bash
+    docker-compose logs -f
+    ```
+
+3.  **Stop the Application**
+    ```bash
+    docker-compose down
+    ```
+
+The API will be available at `http://localhost:3000`
+
+### Using Docker Directly
+
+1.  **Build the Docker Image**
+    ```bash
+    docker build -t justdownloads4u-api .
+    ```
+
+2.  **Run the Container**
+    ```bash
+    docker run -d -p 3000:3000 --name justdownloads4u-api justdownloads4u-api
+    ```
+
+3.  **Stop the Container**
+    ```bash
+    docker stop justdownloads4u-api
+    docker rm justdownloads4u-api
+    ```
+
+### Development Mode with Docker
+
+To enable hot-reload for development, uncomment the volume mounts in `docker-compose.yml`:
+
+```yaml
+volumes:
+  - ./main.py:/app/main.py
+  - ./models.py:/app/models.py
+```
+
+Then restart the container:
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+---
+
+## Local Setup and Installation (Without Docker)
+
+Follow these steps to set up and run the server locally without Docker.
 
 1.  **Clone the Repository**
     If you haven't already, clone the project to your local machine.

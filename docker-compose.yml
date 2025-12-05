@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: justdownloads4u-api
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount temp directory for persistent downloads (optional)
+      - ./temp:/app/temp
+      # Mount source code for development (uncomment for hot reload)
+      # - ./main.py:/app/main.py
+      # - ./models.py:/app/models.py
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
