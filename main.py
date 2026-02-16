@@ -40,11 +40,25 @@ def get_ydl_opts(extra_opts=None):
         'no_warnings': True,
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'web']
+                'player_client': ['android', 'web', 'ios']
             }
         },
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'http_headers': {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+            'Sec-Fetch-Mode': 'navigate',
+        }
     }
+    
+    # Add cookie file if provided via environment variable
+    cookies_path = os.getenv('YOUTUBE_COOKIES_PATH')
+    if cookies_path and os.path.exists(cookies_path):
+        opts['cookiefile'] = cookies_path
+        logger.info(f"[CONFIG] Using cookie file: {cookies_path}")
+    elif cookies_path:
+        logger.warning(f"[CONFIG] Cookie file specified but not found: {cookies_path}")
+    
     if extra_opts:
         opts.update(extra_opts)
     return opts

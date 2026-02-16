@@ -230,6 +230,89 @@ server_py/
 
 ## Troubleshooting
 
+### YouTube Bot Detection in Production
+
+If you encounter the following error in production (e.g., on deployment platforms like Render, Railway, or DigitalOcean):
+
+```
+ERROR: [youtube] Sign in to confirm you're not a bot
+```
+
+This happens because YouTube blocks requests from datacenter/cloud IPs, while allowing local development IPs. The solution is to use cookie-based authentication.
+
+#### Solution: Export and Use YouTube Cookies
+
+**Step 1: Install a Browser Extension**
+
+Install one of these browser extensions to export cookies:
+- **Chrome/Edge:** [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
+- **Firefox:** [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/)
+
+**Step 2: Export YouTube Cookies**
+
+1. Sign in to YouTube in your browser
+2. Navigate to any YouTube video page
+3. Click the extension icon
+4. Select "Export" or "Current Site" to download `youtube.com_cookies.txt`
+5. Rename the file to `cookies.txt` for simplicity
+
+**Step 3: Deploy with Cookies**
+
+Choose your deployment method:
+
+**Option A: Docker Deployment**
+
+Mount the cookie file when running the container:
+
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -e YOUTUBE_COOKIES_PATH=/app/cookies.txt \
+  -v /path/to/your/cookies.txt:/app/cookies.txt:ro \
+  --name justdownloads4u-api \
+  justdownloads4u-api
+```
+
+**Option B: Docker Compose**
+
+Add the environment variable and volume mount to `docker-compose.yml`:
+
+```yaml
+services:
+  api:
+    # ... other config
+    environment:
+      - YOUTUBE_COOKIES_PATH=/app/cookies.txt
+    volumes:
+      - ./cookies.txt:/app/cookies.txt:ro
+```
+
+**Option C: Cloud Platform (Render, Railway, etc.)**
+
+1. Upload your `cookies.txt` file to your project repository (in a secure way, or use secrets)
+2. Set environment variable: `YOUTUBE_COOKIES_PATH=/app/cookies.txt`
+3. Ensure the cookie file is included in your deployment
+
+> **⚠️ Security Note:** Never commit cookie files to public repositories. Use `.gitignore` (already configured) and consider using your platform's secret management for production.
+
+> **📝 Cookie Expiration:** Cookies typically expire after a few weeks to months. If you start seeing bot detection errors again, simply re-export fresh cookies and redeploy.
+
+#### Verification
+
+After deploying with cookies, you should see this log message on startup:
+
+```
+[CONFIG] Using cookie file: /app/cookies.txt
+```
+
+If the cookie file is not found, you'll see:
+
+```
+[CONFIG] Cookie file specified but not found: /app/cookies.txt
+```
+
+### Other Common Issues
+
 - **"Cannot parse data" or site-specific errors:** Social media sites frequently change their structure, which can break `yt-dlp`. If you encounter errors for a specific platform (e.g., Facebook, Instagram), the first step is always to upgrade `yt-dlp` to the latest version.
 
   ```bash
@@ -238,3 +321,4 @@ server_py/
   ```
 
 - **Downloads are audio-only or fail to merge:** This almost always means `ffmpeg` is not installed or not available in your system's PATH. Please verify the `ffmpeg` installation steps in the Prerequisites section.
+

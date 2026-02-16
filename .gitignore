@@ -10,3 +10,8 @@ __pycache__/
 .idea/
 .vscode/
 .DS_Store
+
+# Cookie files (sensitive data)
+cookies.txt
+youtube_cookies.txt
+*.cookies
