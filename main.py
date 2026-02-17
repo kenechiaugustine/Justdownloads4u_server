@@ -35,6 +35,9 @@ def cleanup_file(path: str):
         logger.error(f"[CLEANUP-ERROR] Failed to delete temp file: {e}")
 
 def get_ydl_opts(extra_opts=None):
+    """
+    Get yt-dlp options with cookie authentication support
+    """
     opts = {
         'quiet': True,
         'no_warnings': True,
@@ -51,17 +54,56 @@ def get_ydl_opts(extra_opts=None):
         }
     }
     
-    # Add cookie file if provided via environment variable
+    # COOKIE AUTHENTICATION - Priority order:
+    # 1. Cookie file from environment variable (for production/headless servers)
+    # 2. Browser cookies (for development/servers with browser access)
+    
     cookies_path = os.getenv('YOUTUBE_COOKIES_PATH')
+    cookie_browser = os.getenv('COOKIE_BROWSER', 'chrome')  # Default to chrome
+    
     if cookies_path and os.path.exists(cookies_path):
+        # Method 1: Use cookie file
         opts['cookiefile'] = cookies_path
         logger.info(f"[CONFIG] Using cookie file: {cookies_path}")
     elif cookies_path:
         logger.warning(f"[CONFIG] Cookie file specified but not found: {cookies_path}")
+        # Fall back to browser cookies
+        try:
+            opts['cookiesfrombrowser'] = (cookie_browser,)
+            logger.info(f"[CONFIG] Cookie file not found, falling back to browser cookies: {cookie_browser}")
+        except Exception as e:
+            logger.warning(f"[CONFIG] Could not use browser cookies: {e}")
+    else:
+        # Method 2: Use browser cookies (recommended for development)
+        try:
+            opts['cookiesfrombrowser'] = (cookie_browser,)
+            logger.info(f"[CONFIG] Using browser cookies from: {cookie_browser}")
+        except Exception as e:
+            logger.warning(f"[CONFIG] Could not use browser cookies: {e}")
+            logger.warning("[CONFIG] No cookie authentication configured - some videos may fail")
     
     if extra_opts:
         opts.update(extra_opts)
     return opts
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    cookie_method = "none"
+    cookies_path = os.getenv('YOUTUBE_COOKIES_PATH')
+    cookie_browser = os.getenv('COOKIE_BROWSER', 'chrome')
+    
+    if cookies_path and os.path.exists(cookies_path):
+        cookie_method = f"file: {cookies_path}"
+    elif cookie_browser:
+        cookie_method = f"browser: {cookie_browser}"
+    
+    return {
+        "status": "healthy",
+        "service": "YouTube Downloader",
+        "cookie_auth": cookie_method,
+        "temp_dir": TEMP_DIR
+    }
 
 @app.post("/info", response_model=VideoInfoResponse)
 async def get_info(request: VideoInfoRequest):
@@ -86,6 +128,7 @@ async def get_info(request: VideoInfoRequest):
             for f in formats if f.get('resolution') or (f.get('format_note') and f.get('format_note', '').startswith('audio only'))
         ]
         
+        logger.info(f"[INFO] Successfully fetched info for: {metadata.get('title')}")
         return VideoInfoResponse(
             title=metadata.get('title'),
             thumbnail=metadata.get('thumbnail'),
@@ -93,7 +136,18 @@ async def get_info(request: VideoInfoRequest):
         )
     except Exception as e:
         logger.error(f"[ERROR] Failed to fetch info for URL: {url} - {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch video information: {str(e)}")
+        
+        # Provide helpful error message for cookie-related issues
+        error_msg = str(e)
+        if "Sign in to confirm you're not a bot" in error_msg or "bot" in error_msg.lower():
+            error_msg = (
+                "YouTube requires authentication. Please configure cookies:\n"
+                "1. Set COOKIE_BROWSER=chrome (or firefox, edge, etc.) to use browser cookies, OR\n"
+                "2. Set YOUTUBE_COOKIES_PATH=/path/to/cookies.txt to use a cookie file.\n"
+                f"Original error: {error_msg}"
+            )
+        
+        raise HTTPException(status_code=500, detail=f"Failed to fetch video information: {error_msg}")
 
 @app.get("/download")
 async def download_video(
@@ -150,14 +204,25 @@ async def download_video(
         
     except Exception as e:
         logger.error(f"[DOWNLOAD-ERROR] Execution failed for {url}: {str(e)}")
+        
         # Cleanup on error
         if os.path.exists(temp_filepath):
             os.remove(temp_filepath)
         mp3_path = temp_filepath.replace('.mp4', '.mp3')
         if os.path.exists(mp3_path):
             os.remove(mp3_path)
+        
+        # Provide helpful error message for cookie-related issues
+        error_msg = str(e)
+        if "Sign in to confirm you're not a bot" in error_msg or "bot" in error_msg.lower():
+            error_msg = (
+                "YouTube requires authentication. Please configure cookies:\n"
+                "1. Set COOKIE_BROWSER=chrome (or firefox, edge, etc.) to use browser cookies, OR\n"
+                "2. Set YOUTUBE_COOKIES_PATH=/path/to/cookies.txt to use a cookie file.\n"
+                f"Original error: {error_msg}"
+            )
             
-        raise HTTPException(status_code=500, detail=f"Failed to process the video: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to process the video: {error_msg}")
 
 if __name__ == "__main__":
     import uvicorn
